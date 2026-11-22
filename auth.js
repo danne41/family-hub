@@ -10,7 +10,7 @@ function setUser(u) {
   $('groups-panel').classList.toggle('hidden',!u);
   $('signed-in-as').textContent=u ? 'Inloggad som '+(u.email || 'användare') : '';
   $('account-pill').textContent=u ? 'Inloggad · '+(u.email || '') : 'Lokal prototyp · Ej inloggad';
-  if(u){refreshGroups();loadProfile();} else { $('group-list').replaceChildren(); window.FH.groups=[];document.dispatchEvent(new Event('fh-groups')); }
+  if(u){document.querySelector('nav [data-view="calendar"]')?.click();refreshGroups();loadProfile();} else { $('group-list').replaceChildren(); window.FH.groups=[];document.dispatchEvent(new Event('fh-groups')); }
 }
 async function refreshGroups(){
   const {data,error}=await client.from('family_groups').select('id,name,created_at,owner_id').order('created_at',{ascending:false});
@@ -33,7 +33,7 @@ async function loadProfile(){
   const {data,error}=await client.from('profiles').select('first_name,last_name,color').eq('id',user.id).maybeSingle();
   if(error){$('profile-status').textContent='Kunde inte läsa profil: '+errText(error)+'. Har du kört SQL för v0.4?';return;}
   const f=$('profile-form');f.elements.first_name.value=data?.first_name||'';f.elements.last_name.value=data?.last_name||'';f.elements.color.value=data?.color||'#237b9a';
-  if(!data?.first_name?.trim()){$('profile-status').textContent='Fyll i ditt förnamn för att fortsätta.';document.querySelector('nav [data-view="profile"]')?.click();}
+  if(!data?.first_name?.trim()){$('profile-status').textContent='Fyll i ditt förnamn för att fortsätta.';/* Profilen kompletteras via Min profil, men kalendern är alltid startvy. */}
   else {$('profile-status').textContent='Profil sparad.';$('account-pill').textContent=data.first_name;}
 }
 async function init(){

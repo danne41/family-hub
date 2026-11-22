@@ -1,14 +1,18 @@
-# Family Hub 0.5.1 – design och kalenderkopplingar
+# Family Hub 0.5.2 – testversion
 
-Detta är en uppdatering av 0.5 med lugnare landningssida och kalenderkopplingspanel under **Min profil**.
+## Nytt
+- Kalendern är standardvy vid inloggning och siduppdatering; profilens kompletteringsmeddelande finns kvar utan automatisk omdirigering.
+- Inköpslistan visar varan omedelbart och återställer vid serverfel.
+- Automatisk idrottskoppling beskrivs som en framtida Premium Family-funktion (inte aktiv ännu).
+- Installationsguide med illustrerade iOS/Android-instruktioner.
+- Årspriser med cirka 10 % rabatt: Plus 421 kr/år, Premium Family 745 kr/år.
+- Utkast till juridiska informationssidor; inte godkända villkor.
 
 ## Installera
-1. Ladda upp ZIP-filens appfiler till GitHub-grenen `Develope`.
-2. **Behåll din fungerande `config.js`** – ZIP-filen innehåller endast en tom mall.
-3. Vänta på Cloudflare Pages preview-deploy och testa startsidan och Min profil.
-4. För veckohandling krävs fortfarande Supabase-migrationen `supabase-migration-0.4.sql` om den inte redan körts.
+1. Lägg upp filerna på GitHub-grenen Develope.
+2. Behåll din fungerande config.js, eftersom den bifogade är en tom mall.
+3. Låt Cloudflare Pages skapa en preview. Testa inköp, siduppdatering, profil, mobilguide och priser.
+4. Supabase-migrationen 0.4 krävs för profiles och shopping_items. Kör den endast om den inte redan körts.
 
 ## Begränsningar
-- Knapparna för Google, Outlook och Apple visar information, men ansluter inte till respektive tjänst. Inga tokens eller externa kalenderdata behandlas.
-- Priserna är preliminära; inga betalningar eller annonser är aktiverade.
-- Kalenderhändelser är fortfarande lokala i den här versionen.
+Riktig kalender- och idrottssynk, betalningar, annonser och Premium-behörighetskontroller är inte implementerade. Juridiktexterna är enbart utkast.
