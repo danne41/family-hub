@@ -15,6 +15,7 @@
  function billing(year){
   $('price-year').classList.toggle('selected',year);$('price-month').classList.toggle('selected',!year);
   document.querySelectorAll('.price-amount strong').forEach(e=>{e.textContent=e.dataset[year?'year':'month']+' kr';e.nextElementSibling.textContent=year?'/år':'/månad';});
+  document.querySelectorAll('.year-saving').forEach(e=>e.hidden=!year);
  }
  $('price-year').onclick=()=>billing(true);$('price-month').onclick=()=>billing(false);
  let offset=0, items=['Mjölk','Bröd','Frukt'];
