@@ -1,1 +1,0 @@
-Family Hub 0.9: rättad dubbelladdning av billing.js, borttagen konkurrerande plan-knapphanterare, tydligare layout, fungerande navigering till priser, profilens portal dold tills abonnemang finns. Stripe Edge Function-fel kan kvarstå och måste felsökas separat. Ladda upp på Develope, inte main. Ingen ny SQL behövs.
