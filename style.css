@@ -96,3 +96,51 @@
 .auth-close{position:absolute;right:10px;top:10px;border:0;background:transparent;color:#173653}
 @media(max-width:800px){.landing-hero{grid-template-columns:1fr;padding-top:15px}.feature-grid{grid-template-columns:repeat(2,1fr)}.pricing-grid{grid-template-columns:1fr}.landing-nav nav{gap:12px}.landing-nav{flex-wrap:wrap}.hero-preview{transform:none}}
 @media(max-width:470px){.landing-nav nav{order:3;width:100%;justify-content:center}.landing-hero{margin-top:0}.feature-grid{grid-template-columns:1fr}.preview-days div{min-height:95px;font-size:.6rem}.demo-days div{font-size:.7rem}.landing-hero h1{font-size:2.5rem}}
+
+/* 0.5.1 – lugnare redaktionell landningssida */
+.landing{background:#f8f9f6;color:#23352f;font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+.landing-nav{background:#f8f9f6;border-bottom:1px solid #e3e7df;box-shadow:none}
+.landing-logo{font-size:1.15rem;letter-spacing:-.045em;font-weight:800;color:#1d443b}
+.landing-nav a:not(.landing-logo){font-size:.9rem;color:#465c52}
+.landing-hero{max-width:1190px;margin:auto;gap:70px;padding-top:90px;padding-bottom:100px}
+.landing-hero h1{font-size:clamp(3rem,6vw,5.6rem);letter-spacing:-.065em;line-height:1.02;font-weight:720;color:#1b342b}
+.landing-hero h1 em{font-style:normal;color:#497f68}
+.landing-hero p{max-width:500px;font-size:1.1rem;line-height:1.7;color:#52655c}
+.landing-kicker{font-size:.72rem;letter-spacing:.14em;color:#537463;font-weight:750}
+.landing-actions button,.landing-bottom button{background:#234d3f;border-radius:10px}
+.hero-preview{background:#fff;border:1px solid #dce4dc;border-radius:18px;box-shadow:0 18px 55px #193b2812;transform:rotate(-1deg)}
+.preview-top{border-bottom:1px solid #e8eee8}
+.preview-days div{background:#f5f8f5;border:1px solid #e7ede6;border-radius:10px}
+.preview-note{color:#526e5f}
+.landing-section{max-width:1120px;margin:auto;padding:85px 22px}
+.landing-section h2{letter-spacing:-.045em;line-height:1.13;color:#213b31;font-size:clamp(1.9rem,3.5vw,3.1rem)}
+.feature-grid article{background:transparent;border:0;border-top:1px solid #cdd8cd;border-radius:0;box-shadow:none;padding:23px 8px 15px}
+.feature-grid article span{font-size:1.5rem}
+.feature-grid article h3{letter-spacing:-.025em}
+.demo-section{background:#edf2eb;border-radius:22px}
+.demo-card{border:1px solid #d9e3d9;box-shadow:0 12px 38px #183b2410;border-radius:16px}
+.price-card{background:#fff;border:1px solid #dbe3dc;border-radius:14px;box-shadow:none}
+.price-card.featured{border:2px solid #427d64;background:#f7faf7}
+.price-amount strong{color:#244e3e}
+.billing-switch{background:#e5ebe5}
+.landing-bottom{background:#23483b}
+.landing-bottom p{color:#d4e4d9}
+.sync-panel{margin-top:18px}
+.sync-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.sync-eyebrow{font-size:.72rem;letter-spacing:.13em;color:#64847a;font-weight:750}
+.sync-phase{font-size:.72rem;background:#eaf2ef;border-radius:100px;padding:7px 12px;color:#365e4d;white-space:nowrap}
+.sync-providers{border:1px solid #e1e9e5;border-radius:14px;overflow:hidden;margin-top:15px}
+.sync-provider{display:flex;align-items:center;gap:14px;padding:14px;border-bottom:1px solid #e1e9e5}
+.sync-provider:last-child{border-bottom:0}
+.sync-provider-mark{width:38px;height:38px;flex:0 0 38px;display:grid;place-items:center;border-radius:11px;font-weight:800;background:#e7eee9;color:#23483b}
+.sync-provider-mark.google{color:#387b56;background:#e8f4ec}
+.sync-provider-mark.outlook{color:#276ba0;background:#eaf2fb}
+.sync-provider-mark.apple{color:#2d3741;background:#edf0f3}
+.sync-provider-copy{display:flex;flex:1;min-width:0;flex-direction:column;gap:4px}
+.sync-provider-copy small{color:#75857f}
+.sync-provider button{white-space:nowrap}
+.sync-privacy{background:#f3f7f4;padding:17px;border-radius:13px;margin-top:16px}
+.sync-privacy-options{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.sync-privacy-options span{border:1px solid #d6e1d8;background:#fff;border-radius:20px;padding:6px 11px;font-size:.83rem}
+@media(max-width:800px){.landing-hero{padding:45px 22px 65px;gap:25px}.hero-preview{transform:none}.landing-section{padding:65px 22px}.demo-section{border-radius:0}}
+@media(max-width:470px){.sync-provider{gap:8px;padding:10px}.sync-provider button{padding:9px}.sync-heading{flex-wrap:wrap}}

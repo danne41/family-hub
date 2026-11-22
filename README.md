@@ -1,19 +1,14 @@
-# Family Hub 0.5 – landningssida och prisplaner
+# Family Hub 0.5.1 – design och kalenderkopplingar
 
-## Nytt
-- Publik responsiv startsida med funktioner, interaktiv demokalender och demolista.
-- Inloggning och registrering i dialog från startsidan, med befintlig Supabase Auth.
-- Prisnivåer (förslag): Free 0 kr, Plus 39 kr/mån, Premium Family 69 kr/mån.
-- Årspriser i jämförelsen: Plus 390 kr, Premium Family 690 kr (förslag).
-- Premium Family-modell: abonnemang på person, förmåner för betalaren och högst fem inbjudna i EN vald familjegrupp.
-- Inga annonser, betalningar eller verkliga abonnemang aktiverade. Knapparna för betalnivåerna markerar att de kommer senare.
+Detta är en uppdatering av 0.5 med lugnare landningssida och kalenderkopplingspanel under **Min profil**.
 
 ## Installera
-1. Packa upp och ladda upp appfilerna till GitHub-grenen `Develope`.
-2. BEHÅLL den fungerande `config.js` från ditt repo (ZIP innehåller endast en platshållare).
-3. Kontrollera att Supabase-migrationen för v0.4 redan körts.
-4. Testa Cloudflare-förhandsversionen på mobil och dator, inklusive inloggning och befintliga appfunktioner.
-5. Publicera inte till `main` förrän testet är godkänt.
+1. Ladda upp ZIP-filens appfiler till GitHub-grenen `Develope`.
+2. **Behåll din fungerande `config.js`** – ZIP-filen innehåller endast en tom mall.
+3. Vänta på Cloudflare Pages preview-deploy och testa startsidan och Min profil.
+4. För veckohandling krävs fortfarande Supabase-migrationen `supabase-migration-0.4.sql` om den inte redan körts.
 
-## Viktigt
-Ingen ny SQL behövs för landningssidan. Riktig betalning, behörighetsstyrd Premium-delning, annonser och extern kalendersynk är INTE implementerade i denna version. Prisplanerna är marknadsföringsförslag, inte aktiva produkter.
+## Begränsningar
+- Knapparna för Google, Outlook och Apple visar information, men ansluter inte till respektive tjänst. Inga tokens eller externa kalenderdata behandlas.
+- Priserna är preliminära; inga betalningar eller annonser är aktiverade.
+- Kalenderhändelser är fortfarande lokala i den här versionen.
