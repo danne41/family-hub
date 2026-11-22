@@ -15,3 +15,12 @@ Detta är en lokal prototyp, **inte** ett fleranvändarsystem. Inloggning, Googl
 
 ## Nästa etapp
 Supabase Auth + databas med Row Level Security, medlemskap, kalenderbehörigheter och tidsbegränsade inbjudningar. Sedan realtidssynk och separata OAuth-godkännanden för externa kalendrar.
+
+
+## Uppdatering 0.2.1
+- Dag och vecka visas nu som tidsrutnät med klickbara aktiviteter.
+- Månadsvyn har klickbara dagar och `+N till` för överfulla dagar.
+- Aktivitetsdetaljer öppnas i en mobilanpassad dialog.
+- Skapa aktivitet med start/slut, plats och lokala deltagare.
+- Deltagarna får **inga** inbjudningar och ingen RSVP-status synkas ännu. Detta kräver backend och kalenderintegration.
+- Vid uppladdning: ersätt filerna på utvecklingsgrenen, inte `main`.
