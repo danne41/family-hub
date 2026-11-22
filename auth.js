@@ -6,6 +6,12 @@ let client, user; window.FH={client:null,user:null,groups:[]};
 function message(text) { $('auth-info').textContent = text; }
 function errText(error) { return error?.message || 'Ett oväntat fel inträffade.'; }
 function setUser(u) {
+  const priceSection=document.getElementById('pricing'), appSlot=document.getElementById('pricing-app-slot'), install=document.getElementById('install');
+  if(priceSection&&appSlot&&install){
+    if(u && priceSection.parentElement!==appSlot) appSlot.append(priceSection);
+    if(!u && priceSection.parentElement===appSlot) install.parentElement.insertBefore(priceSection,install);
+  }
+
   user=u; window.FH.user=u; document.dispatchEvent(new Event('fh-auth')); $('welcome').classList.toggle('hidden',!!u); $('app-shell').classList.toggle('hidden',!u); $('auth-guest').classList.toggle('hidden',!!u); $('auth-user').classList.toggle('hidden',!u);
   $('groups-panel').classList.toggle('hidden',!u);
   $('signed-in-as').textContent=u ? 'Inloggad som '+(u.email || 'användare') : '';
@@ -62,7 +68,9 @@ async function init(){
     if(!email||password.length<8){message('Ange e-postadress och minst åtta tecken i lösenordet.');return;}
     const {error}=await client.auth.signUp({email,password});message(error?'Kunde inte skapa konto: '+errText(error):'Kontot har registrerats. Kontrollera e-posten för eventuell bekräftelselänk.');
   });
-  $('signout').addEventListener('click',async()=>{const {error}=await client.auth.signOut();if(error)message(errText(error));});
+  async function signOut(){const {error}=await client.auth.signOut();if(error)message(errText(error));}
+  $('signout').addEventListener('click',signOut);
+  document.getElementById('sidebar-signout')?.addEventListener('click',signOut);
   $('create-group-form').addEventListener('submit',async e=>{e.preventDefault();const f=new FormData(e.currentTarget),name=String(f.get('name')).trim();if(!name)return;
     const {error}=await client.rpc('create_family_group',{p_name:name});if(error)message(errText(error));else{e.target.reset();message('Gruppen skapades.');await refreshGroups();}
   });

@@ -150,3 +150,29 @@
 
 /* Family Hub 0.6 – varm, mindre generisk identitet */
 .landing{background:#f7f4ee}.landing-hero{background:#f4efe5}.landing-kicker{letter-spacing:.08em}.landing-hero h1{max-width:790px;line-height:1.12;letter-spacing:-.035em}.landing-hero em{color:#3e6c55}.hero-preview{transform:rotate(-1.2deg);box-shadow:6px 12px 0 #e3dacd,0 20px 40px #263b2a18}.feature-grid article:nth-child(2){transform:translateY(8px)}.feature-grid article:nth-child(3){transform:translateY(-5px)}.year-saving{font-weight:700;color:#2e7052;background:#e5f2e8;border-radius:8px;padding:8px 10px;margin:8px 0}.year-saving[hidden]{display:none}
+
+/* v0.8 – warm unified app style */
+:root{color:#30443b;background:#f7f5ee}
+body{background:#f7f5ee;color:#30443b}
+.shell{background:#f7f5ee;grid-template-columns:230px minmax(0,1fr)}
+.shell aside{background:#f0eee5;color:#2e473e;border-right:1px solid #dedfd2;padding-top:30px}
+.shell aside .brand{color:#345a48;font-family:Georgia,serif;font-weight:700;letter-spacing:-.6px}
+.shell aside nav button{color:#455b4d;background:transparent;border-radius:13px;font-weight:600}
+.shell aside nav button.active,.shell aside nav button:hover{background:#dde8d9;color:#244c3a}
+.shell aside .side-note{color:#78867a}
+.shell main{background:#f7f5ee}
+.shell main header{border-bottom:1px solid #e8e7dc}
+.shell main header h1{font-family:Georgia,serif;color:#294b3b;letter-spacing:-.5px}
+.shell .card{background:#fffefa;border:1px solid #e5e5d9;border-radius:19px;box-shadow:0 5px 20px rgba(45,65,49,.045)}
+.shell button:not(.secondary):not(.sidebar-signout),.shell .filebtn{background:#3e7156;color:#fff}
+.shell button:not(.secondary):not(.sidebar-signout):hover{background:#305c45}
+.shell button.secondary{background:#eaf0e6;color:#345a45}
+.shell input,.shell select,.shell textarea{background:#fffefa;border-color:#d8ded3;color:#2e4338}
+.shell .pill{background:#e7eee3;color:#315942}
+.shell .eyebrow{color:#718e79}
+.sidebar-signout{margin-top:auto;background:transparent;color:#456653;text-align:left;border:1px solid #cbd7c8;border-radius:12px}
+.sidebar-signout:hover{background:#e3ebdf}
+#pricing-app-slot .landing-section{padding:10px 0 30px;max-width:none}
+#pricing-app-slot .pricing-grid{align-items:stretch}
+#pricing-app-slot .price-card{background:#fffefa;border-color:#e1e3d7}
+@media(max-width:750px){.shell{display:block}.shell aside{border-right:0;border-bottom:1px solid #dedfd2;padding:14px}.shell aside nav{display:flex;overflow-x:auto;gap:6px}.shell aside nav button{flex-shrink:0}.sidebar-signout{margin-top:6px}.shell main{padding:14px}}
