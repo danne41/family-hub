@@ -11,7 +11,6 @@
  $('auth-close').addEventListener('click',close);
  $('auth-backdrop').addEventListener('click',close);
  document.addEventListener('keydown',e=>{if(e.key==='Escape')close();});
- document.querySelectorAll('[data-plan-interest]').forEach(b=>b.addEventListener('click',()=>{document.getElementById('pricing').scrollIntoView({behavior:'smooth'}); b.textContent='Kommer senare';}));
  function billing(year){
   $('price-year').classList.toggle('selected',year);$('price-month').classList.toggle('selected',!year);
   document.querySelectorAll('.price-amount strong').forEach(e=>{e.textContent=e.dataset[year?'year':'month']+' kr';e.nextElementSibling.textContent=year?'/år':'/månad';});

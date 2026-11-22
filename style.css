@@ -176,3 +176,39 @@ body{background:#f7f5ee;color:#30443b}
 #pricing-app-slot .pricing-grid{align-items:stretch}
 #pricing-app-slot .price-card{background:#fffefa;border-color:#e1e3d7}
 @media(max-width:750px){.shell{display:block}.shell aside{border-right:0;border-bottom:1px solid #dedfd2;padding:14px}.shell aside nav{display:flex;overflow-x:auto;gap:6px}.shell aside nav button{flex-shrink:0}.sidebar-signout{margin-top:6px}.shell main{padding:14px}}
+
+/* Family Hub 0.9 — cohesive interface */
+.shell{grid-template-columns:240px minmax(0,1fr)}
+.shell aside{position:sticky;top:0;height:100dvh;gap:22px;padding:28px 16px;background:#f4f3ed}
+.shell aside .brand{font-size:23px;padding:0 12px 18px;border-bottom:1px solid #dce2d8}
+.shell aside nav{display:grid;gap:5px}
+.shell aside nav button{font-size:14px;line-height:1.3;padding:13px 14px}
+.shell main{min-width:0;padding:28px clamp(20px,3.5vw,55px) 36px;max-width:1500px;width:100%;margin:auto}
+.shell main header{padding:0 0 23px;margin-bottom:28px;align-items:center}
+.shell main header h1{font-size:clamp(29px,3vw,41px)}
+.shell .view{max-width:1100px;margin:0 auto}
+.shell .view>.card{margin-bottom:20px;padding:clamp(20px,2.6vw,32px)}
+.shell .view>.card h2{font-size:22px;letter-spacing:-.03em;margin-top:0}
+.shell .card{box-shadow:0 3px 16px #29453608;border-radius:18px}
+.shell .sidebar-signout{width:100%;margin-top:auto;padding:12px 14px}
+#pricing-app-slot .landing-section{padding:0 0 28px}
+#pricing-app-slot .landing-kicker{font-size:11px;letter-spacing:.12em}
+#pricing-app-slot .landing-section>h2{font-size:clamp(26px,3vw,37px);margin:8px 0 10px}
+#pricing-app-slot .landing-section>p{font-size:14px;line-height:1.55;max-width:750px}
+#pricing-app-slot .billing-switch{margin:22px 0 14px}
+#pricing-app-slot .pricing-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin:18px 0 16px;align-items:stretch}
+#pricing-app-slot .price-card{min-width:0;padding:24px;gap:8px;border:1px solid #dfe5dc;border-radius:18px;box-shadow:0 3px 16px #29453609;display:flex;flex-direction:column}
+#pricing-app-slot .price-card.featured{border:2px solid #53856b;background:#f9fcf8}
+#pricing-app-slot .price-card h3{font-size:23px;margin:6px 0}
+#pricing-app-slot .price-card p{font-size:14px;line-height:1.5;margin:8px 0}
+#pricing-app-slot .price-card ul{font-size:14px;line-height:1.55;flex:1;margin:14px 0 20px;padding-left:20px}
+#pricing-app-slot .price-card li{margin-bottom:10px}
+#pricing-app-slot .price-card button{margin-top:auto;padding:13px 10px}
+#pricing-app-slot .price-amount strong{font-size:clamp(27px,2.7vw,35px)}
+#pricing-app-slot .popular{font-size:10px;letter-spacing:.09em}
+#pricing-app-slot #billing-notice{margin-top:15px;color:#7c4e3b}
+.billing-profile-card{display:flex;flex-wrap:wrap;align-items:center;gap:12px}
+.billing-profile-card h2,.billing-profile-card>p{flex-basis:100%;margin-bottom:0}
+.billing-profile-card button{width:auto}
+@media(max-width:1050px){#pricing-app-slot .pricing-grid{grid-template-columns:1fr}#pricing-app-slot .price-card{padding:22px}#pricing-app-slot .price-card ul{flex:none}}
+@media(max-width:750px){.shell{display:block}.shell aside{position:relative;height:auto;padding:14px;gap:10px}.shell aside .brand{padding:0 4px 10px;font-size:20px}.shell aside nav{display:flex;overflow-x:auto;gap:6px;padding-bottom:4px}.shell aside nav button{flex-shrink:0;white-space:nowrap;font-size:13px;padding:10px 12px}.shell .sidebar-signout{margin-top:4px;width:auto;padding:8px 12px}.shell main{padding:22px 16px}.shell main header{margin-bottom:20px}.shell .view>.card{padding:20px}#pricing-app-slot .pricing-grid{grid-template-columns:1fr}}
