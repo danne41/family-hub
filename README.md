@@ -1,15 +1,30 @@
-# Family Hub 0.3.1 – inloggningssida och förbättrad felhantering
+# Family Hub 0.1
 
-Uppdatering av 0.3. Dag/vecka/månad och lokala funktioner finns kvar.
+En mobilanpassad, svensk, statisk prototyp av en familjeapp. Ingen server, inget konto, inga betaltjänster.
 
-## Installera på GitHub (Develope)
-1. Ersätt `index.html`, `auth.js`, `style.css` och `sw.js` med filerna i paketet.
-2. **Behåll din nuvarande `config.js` i GitHub.** Paketets `config.js` har en platshållare för nyckeln och ska INTE ersätta din fungerande konfiguration.
-3. Låt Cloudflare Pages publicera preview-grenen.
-4. Testa Skapa konto, e-postbekräftelse, Logga in och Logga ut.
+## Funktioner
+- Familjemedlemmar med egna färger
+- Kalenderaktiviteter och filtrering
+- Import av enkla ICS-kalenderfiler
+- Inköpslista med avprickning och vem som lagt till varan
+- Idrottssektion för manuellt tillagda idrottsaktiviteter
+- Lokal lagring och export/import av JSON-säkerhetskopia
+- Grundläggande PWA/offline-cache
 
-## Felsökning
-Om Safari visar `Load failed` kan orsaken vara nätverk, CDN, blockerad förfrågan eller felaktig Supabase URL. Denna version använder jsDelivr med fallback till esm.sh och visar fel på inloggningssidan. Det är ingen garanti för att felet är löst. Kontrollera Safari Web Inspector och Supabase Authentication logs om problemet kvarstår.
+## Begränsningar
+- **Ingen synkronisering mellan familjemedlemmar eller enheter**; uppgifterna sparas i den aktuella webbläsaren.
+- ICS-parsern är begränsad: inga RRULE-upprepningar, undantag, korrekt TZID-tolkning eller uppdateringshantering. Import kan skapa dubbletter.
+- Inga riktiga kopplingar till Google, Apple, laget.se, Svenskalag, SportAdmin eller e-post.
+- Ingen autentisering, behörighetskontroll, notifiering eller betalning.
+- Återställ endast JSON från betrodd källa.
+- Detta är en testprototyp, inte en produktionsklar tjänst.
 
-## Säkerhet och status
-Familjegrupper sparas i Supabase, men kalenderaktiviteter och inköpslistor är ännu lokala. Google/Apple-inloggning, extern kalender-RSVP och synk är inte implementerade. SQL/RLS bör granskas och testas innan verklig familjedata lagras.
+## Testa lokalt
+Starta en statisk webbserver i projektmappen, t.ex. `python3 -m http.server 8080`, och öppna `http://localhost:8080`. På iPad kan du i stället publicera de statiska filerna via en gratis hostingtjänst. För Cloudflare Pages Direct Upload: ladda upp mappen med `index.html`, `app.js`, `style.css`, `sw.js` och `manifest.webmanifest`.
+
+## Nästa steg
+1. Stabil kalenderhantering (ICS med tidszoner/återkommande händelser).
+2. Säker familjeinloggning, databas, behörigheter och synk.
+3. Godkända kalenderintegrationer.
+4. Sports Inbox och hantering av kallelser.
+5. Premium och betalningar efter säkerhetsgranskning.
