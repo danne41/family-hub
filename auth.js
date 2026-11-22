@@ -6,7 +6,7 @@ let client, user;
 function message(text) { $('auth-info').textContent = text; }
 function errText(error) { return error?.message || 'Ett oväntat fel inträffade.'; }
 function setUser(u) {
-  user=u; $('auth-guest').classList.toggle('hidden',!!u); $('auth-user').classList.toggle('hidden',!u);
+  user=u; $('welcome').classList.toggle('hidden',!!u); $('app-shell').classList.toggle('hidden',!u); $('auth-guest').classList.toggle('hidden',!!u); $('auth-user').classList.toggle('hidden',!u);
   $('groups-panel').classList.toggle('hidden',!u);
   $('signed-in-as').textContent=u ? 'Inloggad som '+(u.email || 'användare') : '';
   $('account-pill').textContent=u ? 'Inloggad · '+(u.email || '') : 'Lokal prototyp · Ej inloggad';
@@ -30,11 +30,21 @@ async function refreshGroups(){
 }
 async function init(){
   $('groups-panel').classList.add('hidden');
-  if(!configured){message('Inloggning är inte aktiverad. Fyll i Supabase Project URL och publishable/anon key i config.js.');$('auth-form').querySelectorAll('button,input').forEach(el=>el.disabled=true);return;}
-  try{const {createClient}=await import('https://esm.sh/@supabase/supabase-js@2');client=createClient(config.url,config.anonKey);
+  if(!configured){$('welcome-message').textContent='Anslutningen är inte konfigurerad.';message('Inloggning är inte aktiverad. Fyll i Supabase Project URL och publishable/anon key i config.js.');$('auth-form').querySelectorAll('button,input').forEach(el=>el.disabled=true);return;}
+  try{let createClient; try { ({createClient}=await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm')); } catch(firstError) { ({createClient}=await import('https://esm.sh/@supabase/supabase-js@2')); } client=createClient(config.url,config.anonKey);
     const {data:{session}}=await client.auth.getSession();setUser(session?.user || null);
     client.auth.onAuthStateChange((_event,session)=>{setTimeout(()=>setUser(session?.user || null),0);});
-  }catch(e){message('Kunde inte starta inloggning: '+errText(e));return;}
+  }catch(e){const txt='Kunde inte starta inloggning. Kontrollera nätverket och att Supabase kan nås. '+errText(e);message(txt);$('welcome-message').textContent=txt;return;}
+  let registration=false;
+  const submit=$('welcome-submit'), welcomeMsg=$('welcome-message'), wf=$('welcome-form');
+  function mode(isRegister){registration=isRegister;$('tab-login').classList.toggle('chosen',!registration);$('tab-register').classList.toggle('chosen',registration);$('welcome-title').textContent=registration?'Skapa ditt konto':'Välkommen tillbaka';$('welcome-subtitle').textContent=registration?'Börja med ett konto. Sedan kan du skapa eller gå med i en familjegrupp.':'Logga in för att öppna Family Hub.';submit.textContent=registration?'Skapa konto':'Logga in';wf.elements.password.autocomplete=registration?'new-password':'current-password';welcomeMsg.textContent='';}
+  $('tab-login').addEventListener('click',()=>mode(false));$('tab-register').addEventListener('click',()=>mode(true));
+  wf.addEventListener('submit',async e=>{e.preventDefault();const f=new FormData(wf),email=String(f.get('email')||'').trim(),password=String(f.get('password')||'');if(!email||password.length<8){welcomeMsg.textContent='Ange en e-postadress och ett lösenord med minst åtta tecken.';return;}
+    submit.disabled=true;welcomeMsg.textContent=registration?'Skapar konto…':'Loggar in…';try{
+      if(registration){const {data,error}=await client.auth.signUp({email,password,options:{emailRedirectTo:window.location.origin+window.location.pathname}});if(error)throw error;welcomeMsg.textContent=data.session?'Kontot skapat.':'Kontrollera din e-post och bekräfta kontot. Återvänd sedan hit och logga in.';}
+      else{const {error}=await client.auth.signInWithPassword({email,password});if(error)throw error;welcomeMsg.textContent='Inloggad.';}
+    }catch(err){welcomeMsg.textContent='Det gick inte att '+(registration?'skapa konto':'logga in')+': '+errText(err)+'. Om det står Load failed, kontrollera Supabase-adressen, Safari-nätverket och eventuella innehållsblockerare.';}finally{submit.disabled=false;}
+  });
   $('auth-form').addEventListener('submit',async e=>{e.preventDefault();const f=new FormData(e.currentTarget);
     const {error}=await client.auth.signInWithPassword({email:String(f.get('email')).trim(),password:String(f.get('password'))});
     message(error?'Inloggning misslyckades: '+errText(error):'Inloggad.');
