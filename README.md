@@ -1,15 +1,19 @@
-# Family Hub 0.3.1 – inloggningssida och förbättrad felhantering
+# Family Hub 0.5 – landningssida och prisplaner
 
-Uppdatering av 0.3. Dag/vecka/månad och lokala funktioner finns kvar.
+## Nytt
+- Publik responsiv startsida med funktioner, interaktiv demokalender och demolista.
+- Inloggning och registrering i dialog från startsidan, med befintlig Supabase Auth.
+- Prisnivåer (förslag): Free 0 kr, Plus 39 kr/mån, Premium Family 69 kr/mån.
+- Årspriser i jämförelsen: Plus 390 kr, Premium Family 690 kr (förslag).
+- Premium Family-modell: abonnemang på person, förmåner för betalaren och högst fem inbjudna i EN vald familjegrupp.
+- Inga annonser, betalningar eller verkliga abonnemang aktiverade. Knapparna för betalnivåerna markerar att de kommer senare.
 
-## Installera på GitHub (Develope)
-1. Ersätt `index.html`, `auth.js`, `style.css` och `sw.js` med filerna i paketet.
-2. **Behåll din nuvarande `config.js` i GitHub.** Paketets `config.js` har en platshållare för nyckeln och ska INTE ersätta din fungerande konfiguration.
-3. Låt Cloudflare Pages publicera preview-grenen.
-4. Testa Skapa konto, e-postbekräftelse, Logga in och Logga ut.
+## Installera
+1. Packa upp och ladda upp appfilerna till GitHub-grenen `Develope`.
+2. BEHÅLL den fungerande `config.js` från ditt repo (ZIP innehåller endast en platshållare).
+3. Kontrollera att Supabase-migrationen för v0.4 redan körts.
+4. Testa Cloudflare-förhandsversionen på mobil och dator, inklusive inloggning och befintliga appfunktioner.
+5. Publicera inte till `main` förrän testet är godkänt.
 
-## Felsökning
-Om Safari visar `Load failed` kan orsaken vara nätverk, CDN, blockerad förfrågan eller felaktig Supabase URL. Denna version använder jsDelivr med fallback till esm.sh och visar fel på inloggningssidan. Det är ingen garanti för att felet är löst. Kontrollera Safari Web Inspector och Supabase Authentication logs om problemet kvarstår.
-
-## Säkerhet och status
-Familjegrupper sparas i Supabase, men kalenderaktiviteter och inköpslistor är ännu lokala. Google/Apple-inloggning, extern kalender-RSVP och synk är inte implementerade. SQL/RLS bör granskas och testas innan verklig familjedata lagras.
+## Viktigt
+Ingen ny SQL behövs för landningssidan. Riktig betalning, behörighetsstyrd Premium-delning, annonser och extern kalendersynk är INTE implementerade i denna version. Prisplanerna är marknadsföringsförslag, inte aktiva produkter.
