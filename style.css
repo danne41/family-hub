@@ -25,3 +25,6 @@
 #participant-picker{display:flex;flex-wrap:wrap;gap:10px}.participant-option{font-size:13px;display:inline-flex;align-items:center;gap:4px}
 #event-form{grid-template-columns:repeat(2,minmax(0,1fr))}#event-form>input[name=title],#event-form>input[name=location]{grid-column:1/-1}#event-form button{grid-column:1/-1}
 @media(max-width:600px){.schedule-header,.schedule-body{grid-template-columns:42px repeat(var(--cols),minmax(72px,1fr))}.time-label{font-size:10px}.schedule-day{font-size:10px}.schedule-day strong{font-size:14px}.schedule-scroll{max-height:62vh}.time-slot .cal-event{font-size:10px;padding:3px}.event-time{font-size:9px}.cal-cell{min-height:80px}.cal-cell .cal-event{font-size:9px}.cal-cell .event-time{display:none}.detail-dialog{position:fixed;top:auto;bottom:0;left:0;right:0;margin:0;width:100%;max-width:none;max-height:85dvh;border-radius:20px 20px 0 0;padding:22px}.detail-dialog::backdrop{background:#122b3b99}}
+
+/* 0.3 auth */
+.auth-form{display:grid;gap:12px;max-width:460px;margin:18px 0 24px}.auth-form label{display:grid;gap:6px;font-size:13px;font-weight:650}.auth-form input{width:100%}#groups-panel .entry{flex-wrap:wrap}#account .card{overflow-wrap:anywhere}@media(max-width:600px){#account .row button{flex:1}}

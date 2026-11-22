@@ -1,26 +1,28 @@
-# Family Hub 0.2 – lokal testversion
+# Family Hub 0.3 – konton och familjegrupper (test)
 
-## Nytt
-- Dag-, vecko- och månadsvy med navigering och färgkodade aktiviteter.
-- Flera lokala kalendrar, välj en kalender eller visa alla.
-- Skapa och ta bort tomma kalendrar.
-- Behåller inköpslista, idrott, ICS-import, backup och återställning.
-- Importerar automatiskt data från Family Hub 0.1 **om samma webbadress används i samma webbläsare**.
+Den tidigare lokala kalendern, shoppinglistan och idrottsöversikten finns kvar. Nytt: Supabase e-postinloggning, skapa familjegrupp, engångsinbjudningskod som gäller 48 timmar, ansluta till flera grupper.
 
-## Publicera på Cloudflare Pages
-Ladda upp innehållet i den här mappen till ett **separat test-repository eller en separat branch**. Testa där innan du uppdaterar den publicerade 0.1-versionen. Om du använder en ny adress följer inte lokal data automatiskt med: exportera först backup från 0.1 och återställ i 0.2.
+## Konfiguration (krävs innan inloggningen fungerar)
 
-## Viktiga begränsningar
-Detta är en lokal prototyp, **inte** ett fleranvändarsystem. Inloggning, Google/Apple/Facebook OAuth, verkliga familjeinbjudningar, delning och molnsynk är **inte** implementerade. De kräver säker backend (t.ex. Supabase), databasbehörigheter och OAuth-konfiguration. ICS-import saknar fullständigt stöd för tidszoner och återkommande aktiviteter. Lagra inte känslig familjeinformation i prototypen.
+1. Skapa ett Supabase-projekt. Öppna SQL Editor och kör hela `supabase-schema.sql`.
+2. I Supabase: Project Settings → API (eller Connect) – kopiera **Project URL** och **publishable key / anon key**. Använd **ALDRIG** `service_role` eller `secret` key i webbkod.
+3. Fyll i de två värdena i `config.js`.
+4. Under Authentication → URL Configuration, sätt **Site URL** till din Cloudflare Pages-testadress och lägg till motsvarande tillåtna **Redirect URLs**. Bekräftelselänkar för e-post behöver tillåten URL. Om Cloudflare skapar nya slumpmässiga preview-URL:er behöver du konfigurera dessa eller använda en stabil branch-URL.
+5. Ladda upp filerna i utvecklingsgrenen, inte `main`. Testa registrering och bekräftelse med två olika e-postkonton.
 
-## Nästa etapp
-Supabase Auth + databas med Row Level Security, medlemskap, kalenderbehörigheter och tidsbegränsade inbjudningar. Sedan realtidssynk och separata OAuth-godkännanden för externa kalendrar.
+## Vad fungerar och vad fungerar inte?
 
+**Fungerar efter Supabase-konfiguration:** kontoregistrering med e-post/lösenord, inloggning, utloggning, gruppskapande, engångsinbjudan och anslutning till grupper. Grupper och medlemskap ligger i Supabase med RLS och serverkontrollerade RPC:er.
 
-## Uppdatering 0.2.1
-- Dag och vecka visas nu som tidsrutnät med klickbara aktiviteter.
-- Månadsvyn har klickbara dagar och `+N till` för överfulla dagar.
-- Aktivitetsdetaljer öppnas i en mobilanpassad dialog.
-- Skapa aktivitet med start/slut, plats och lokala deltagare.
-- Deltagarna får **inga** inbjudningar och ingen RSVP-status synkas ännu. Detta kräver backend och kalenderintegration.
-- Vid uppladdning: ersätt filerna på utvecklingsgrenen, inte `main`.
+**Inte klart:** Google/Apple/Facebook OAuth, automatisk koppling av lokal kalender till grupp, synk av aktiviteter eller shopping mellan enheter, e-post-/kalenderinbjudningar och RSVP-status. Kalenderdata ligger kvar i `localStorage` på den enhet som skapade dem. Skicka därför inga verkliga privata familjeuppgifter i testet.
+
+**Säkerhet:** lösenord hanteras av Supabase Auth. Klienten har endast publik nyckel. Inbjudningskoder lagras som SHA-256-hashar, är engångskoder och löper ut efter 48 timmar. För produktionslansering behövs bl.a. tydliga dataskyddsvillkor, kontoborttagning, missbruksbegränsning och noggrannare säkerhetstester.
+
+## Teststeg
+
+- Skapa konto A, bekräfta e-post, logga in.
+- Skapa familjegrupp och skapa kod. Kopiera koden (den visas bara en gång).
+- Skapa konto B i separat privat fönster/enhet, bekräfta e-post och logga in.
+- Gå med via koden. Kontrollera att båda ser gruppen.
+- Kontrollera att samma kod inte kan användas igen.
+- Kontrollera att kalenderaktiviteter inte delas ännu (förväntat i 0.3).
