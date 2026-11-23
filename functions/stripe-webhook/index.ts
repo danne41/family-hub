@@ -18,14 +18,16 @@ Deno.serve(async(req)=>{
    subscriptionId=typeof session.subscription==="string"?session.subscription:session.subscription.id;
   }else subscriptionId=(event.data.object as Stripe.Subscription).id;
   // Always fetch current Stripe state, including after deletion, rather than trusting stale event snapshots.
-  // Timestamp before network retrieval: later-started Stripe observations win.\n  const observedAt=new Date().toISOString();\n  const sub=await client.subscriptions.retrieve(subscriptionId);
+  // Timestamp before network retrieval: later-started Stripe observations win.
+  const observedAt=new Date().toISOString();
+  const sub=await client.subscriptions.retrieve(subscriptionId);
   const groupId=sub.metadata?.family_group_id,userId=sub.metadata?.supabase_user_id;
   if(!uuid(groupId)||!uuid(userId))throw new Error("Missing verified group metadata");
   const customerId=typeof sub.customer==="string"?sub.customer:sub.customer.id;
   const database=db();const {data:owner,error:ownerError}=await database.from("billing_customers").select("user_id").eq("stripe_customer_id",customerId).single();
   if(ownerError||owner.user_id!==userId)throw new Error("Customer mismatch");
   const item=sub.items.data[0];if(sub.items.data.length!==1||!item)throw new Error("Unexpected subscription items");
-  const plan=priceMap[item.price.id];if(!plan)throw new Error("Unapproved Stripe price");
+  const plan=Object.hasOwn(priceMap,item.price.id)?priceMap[item.price.id]:null;if(!plan)throw new Error("Unapproved Stripe price");
   const {data,error}=await database.rpc("famunova_reconcile_stripe_subscription",{p_event_id:event.id,p_observed_at:observedAt,p_subscription_id:sub.id,p_user_id:userId,p_group_id:groupId,p_customer_id:customerId,p_price_id:item.price.id,p_plan:plan.plan,p_interval:plan.interval,p_status:sub.status,p_period_end:item.current_period_end?new Date(item.current_period_end*1000).toISOString():null,p_cancel_at_period_end:sub.cancel_at_period_end});
   if(error)throw error;
   return new Response("ok",{status:200});
