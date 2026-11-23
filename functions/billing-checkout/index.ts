@@ -18,7 +18,14 @@ Deno.serve(async(req)=>{
   let customerId=existing?.stripe_customer_id;
   if(!customerId){const customer=await stripeClient.customers.create({email:user.email||undefined,metadata:{supabase_user_id:user.id}},{idempotencyKey:`famunova-test-customer-${user.id}`});customerId=customer.id;
    const {error}=await client.from("billing_customers").upsert({user_id:user.id,stripe_customer_id:customerId},{onConflict:"user_id"});if(error)throw error;}
-  const session=await stripeClient.checkout.sessions.create({mode:"subscription",customer:customerId,line_items:[{price:priceId,quantity:1}],client_reference_id:user.id,metadata:{supabase_user_id:user.id,family_group_id:groupId},subscription_data:{metadata:{supabase_user_id:user.id,family_group_id:groupId}},success_url:`${appOrigin}/?billing=success`,cancel_url:`${appOrigin}/?billing=cancel`,allow_promotion_codes:false});
+  // Atomically reserve this family BEFORE creating a Stripe Checkout Session.
+  // Pending reservations expire after 35 minutes; Stripe sessions expire after 30 minutes.
+  const reservationKey=crypto.randomUUID();
+  const {data:admission,error:reservationError}=await client.rpc("famunova_reserve_checkout_internal",
+   {p_group_id:groupId,p_owner_id:user.id,p_price_id:priceId,p_key:reservationKey});
+  if(reservationError)throw reservationError;
+  if(admission!=="acquired")return json({error:admission==="subscribed"?"Group already subscribed":"Checkout already pending for this family"},409,origin);
+  const session=await stripeClient.checkout.sessions.create({mode:"subscription",customer:customerId,line_items:[{price:priceId,quantity:1}],client_reference_id:user.id,metadata:{supabase_user_id:user.id,family_group_id:groupId},subscription_data:{metadata:{supabase_user_id:user.id,family_group_id:groupId}},success_url:`${appOrigin}/?billing=success`,cancel_url:`${appOrigin}/?billing=cancel`,allow_promotion_codes:false,expires_at:Math.floor(Date.now()/1000)+1800},{idempotencyKey:`famunova-checkout-${reservationKey}`});
   if(!session.url||!session.url.startsWith("https://checkout.stripe.com/"))throw new Error("Unexpected checkout URL");
   return json({url:session.url},200,origin);
  }catch(error){console.error("checkout",error);return json({error:"Checkout failed"},500,origin);}
