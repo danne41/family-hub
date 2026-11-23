@@ -1,4 +1,4 @@
-// DRAFT ONLY: requires 004_stripe_event_atomic.sql in isolated test database.
+// DRAFT ONLY: requires 004 and 006 migrations in isolated test database.
 import Stripe from "npm:stripe@22";
 import {configured,db,key,stripe,priceMap,uuid} from "../_shared/billing.ts";
 const secret=Deno.env.get("STRIPE_WEBHOOK_SECRET")||"";
@@ -26,7 +26,7 @@ Deno.serve(async(req)=>{
   if(ownerError||owner.user_id!==userId)throw new Error("Customer mismatch");
   const item=sub.items.data[0];if(sub.items.data.length!==1||!item)throw new Error("Unexpected subscription items");
   const plan=priceMap[item.price.id];if(!plan)throw new Error("Unapproved Stripe price");
-  const {data,error}=await database.rpc("famunova_apply_stripe_event",{p_event_id:event.id,p_subscription_id:sub.id,p_user_id:userId,p_group_id:groupId,p_customer_id:customerId,p_price_id:item.price.id,p_plan:plan.plan,p_interval:plan.interval,p_status:sub.status,p_period_end:item.current_period_end?new Date(item.current_period_end*1000).toISOString():null,p_cancel_at_period_end:sub.cancel_at_period_end});
+  const {data,error}=await database.rpc("famunova_apply_stripe_event_v2",{p_event_id:event.id,p_event_created:event.created,p_subscription_id:sub.id,p_user_id:userId,p_group_id:groupId,p_customer_id:customerId,p_price_id:item.price.id,p_plan:plan.plan,p_interval:plan.interval,p_status:sub.status,p_period_end:item.current_period_end?new Date(item.current_period_end*1000).toISOString():null,p_cancel_at_period_end:sub.cancel_at_period_end});
   if(error)throw error;
   return new Response("ok",{status:200});
  }catch(error){console.error("stripe webhook",error);return new Response("Retry later",{status:500});}
