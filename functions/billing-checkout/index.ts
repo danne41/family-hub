@@ -9,7 +9,7 @@ Deno.serve(async(req)=>{
  try{
   const user=await userFromRequest(req);if(!user)return json({error:"Unauthorized"},401,origin);
   const body=await req.json();const groupId=body?.groupId,priceId=body?.priceId;
-  if(!uuid(groupId)||typeof priceId!=="string"||!priceMap[priceId])return json({error:"Invalid group or price"},400,origin);
+  if(!uuid(groupId)||typeof priceId!=="string"||!Object.hasOwn(priceMap,priceId))return json({error:"Invalid group or price"},400,origin);
   if(!await isOwner(groupId,user.id))return json({error:"Only group owner may subscribe"},403,origin);
   const client=db();const {data:active,error:activeError}=await client.from("billing_subscriptions").select("stripe_subscription_id").eq("group_id",groupId).in("status",["active","trialing","past_due","unpaid","incomplete"]).limit(1);
   if(activeError)throw activeError;
