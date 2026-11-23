@@ -19,9 +19,7 @@ whose initial webhook never created a database row.
 
 ## Important gaps before any deployment
 - No scheduler has been connected. A separate approved scheduled invocation is needed.
-- Batch always selects oldest updated rows; if there are more than 25, newer
-  subscriptions may never be reached. Implement cursor/pagination and persistent
-  per-row retry state before scheduled use.
+- Keyset pagination is now implemented: the authenticated caller sends JSON\n  `{\"cursor\":null}` initially and uses `nextCursor` from each response while\n  `hasMore` is true. Cursor is based on immutable Stripe subscription ID.\n- There is still no persistent per-row retry state. If a batch reports failures,\n  the caller must retain that cursor/batch for retry rather than silently advancing.\n- A scheduled caller and durable checkpoint are not implemented.
 - Deletion/retrieval failure remains unresolved and requires Stripe deleted-event
   fallback verified against Stripe API.
 - A missing initial webhook cannot be recovered by this DB-only scan; a Stripe
