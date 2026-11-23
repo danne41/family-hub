@@ -14,13 +14,24 @@ Deno.serve(async(req)=>{
  if(diff!==0)return new Response("Unauthorized",{status:401});
  try{
   const database=db(),stripeClient=stripe();
-  // Bounded batch; caller may repeat. Missing-subscription discovery needs a separate Stripe sweep.
-  const {data:rows,error}=await database.from("billing_subscriptions")
+  // Stable keyset pagination: updated_at changes during reconciliation, so never page by it.
+  // The authenticated caller must carry nextCursor into the next invocation.
+  let payload:unknown;
+  try{payload=await req.json();}catch{return new Response("Invalid JSON",{status:400});}
+  const cursor=(payload && typeof payload==="object" && "cursor" in payload)?(payload as {cursor:unknown}).cursor:null;
+  if(cursor!==null && (typeof cursor!=="string" || !/^sub_[A-Za-z0-9]+$/.test(cursor)))
+   return new Response("Invalid cursor",{status:400});
+  let query=database.from("billing_subscriptions")
    .select("stripe_subscription_id,user_id,group_id,stripe_customer_id")
-   .not("group_id","is",null).order("updated_at",{ascending:true}).limit(25);
+   .not("group_id","is",null).order("stripe_subscription_id",{ascending:true}).limit(26);
+  if(cursor)query=query.gt("stripe_subscription_id",cursor);
+  const {data,error}=await query;
   if(error)throw error;
+  const batch=(data||[]).slice(0,25);
+  const hasMore=(data||[]).length>25;
+  const nextCursor=hasMore?batch[batch.length-1].stripe_subscription_id:null;
   let updated=0,failed=0,skipped=0;
-  for(const row of rows||[]){
+  for(const row of batch){
    try{
     if(!uuid(row.group_id)||!uuid(row.user_id)){skipped++;continue;}
     const observedAt=new Date().toISOString();
@@ -44,7 +55,7 @@ Deno.serve(async(req)=>{
     updated++;
    }catch(e){failed++;console.error("reconcile subscription",row.stripe_subscription_id,e);}
   }
-  return new Response(JSON.stringify({checked:(rows||[]).length,updated,failed,skipped}),{
+  return new Response(JSON.stringify({checked:batch.length,updated,failed,skipped,nextCursor,hasMore}),{
    status:failed?503:200,headers:{"Content-Type":"application/json","Cache-Control":"no-store"}});
  }catch(e){console.error("reconcile batch",e);return new Response("Retry later",{status:503});}
 });
