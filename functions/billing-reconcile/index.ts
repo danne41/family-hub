@@ -31,9 +31,10 @@ Deno.serve(async(req)=>{
   const hasMore=(data||[]).length>25;
   const nextCursor=hasMore?batch[batch.length-1].stripe_subscription_id:null;
   let updated=0,failed=0,skipped=0;
+  let lastCompletedCursor=cursor;
   for(const row of batch){
    try{
-    if(!uuid(row.group_id)||!uuid(row.user_id)){skipped++;continue;}
+    if(!uuid(row.group_id)||!uuid(row.user_id))throw new Error('Invalid stored family or user identifier');
     const observedAt=new Date().toISOString();
     const sub=await stripeClient.subscriptions.retrieve(row.stripe_subscription_id);
     const groupId=sub.metadata?.family_group_id,userId=sub.metadata?.supabase_user_id;
@@ -53,9 +54,18 @@ Deno.serve(async(req)=>{
     });
     if(rpcError)throw rpcError;
     updated++;
-   }catch(e){failed++;console.error("reconcile subscription",row.stripe_subscription_id,e);}
+    lastCompletedCursor=row.stripe_subscription_id;
+   }catch(e){
+    failed++;console.error("reconcile subscription",row.stripe_subscription_id,e);
+    // Stop at first failure: caller must retry from last successful cursor.
+    // Never advance past a failed subscription silently.
+    return new Response(JSON.stringify({checked:updated+failed,updated,failed,skipped,
+     retryCursor:lastCompletedCursor,failedSubscriptionId:row.stripe_subscription_id,
+     nextCursor:null,hasMore:true}),{
+     status:503,headers:{"Content-Type":"application/json","Cache-Control":"no-store"}});
+   }
   }
-  return new Response(JSON.stringify({checked:batch.length,updated,failed,skipped,nextCursor,hasMore}),{
+  return new Response(JSON.stringify({checked:batch.length,updated,failed,skipped,nextCursor,hasMore,retryCursor:null}),{
    status:failed?503:200,headers:{"Content-Type":"application/json","Cache-Control":"no-store"}});
  }catch(e){console.error("reconcile batch",e);return new Response("Retry later",{status:503});}
 });
