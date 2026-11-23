@@ -9,6 +9,6 @@ assert 'groupId' in checkout and 'isOwner(groupId,user.id)' in checkout
 assert 'family_group_id:groupId' in checkout
 assert 'Multi-family portal requires review' in portal
 assert 'constructEventAsync' in webhook and 'subscriptions.retrieve' in webhook
-assert 'famunova_apply_stripe_event' in webhook and 'FOR UPDATE' in sql
+assert 'famunova_apply_stripe_event_v2' in webhook and 'FOR UPDATE' in sql
 assert 'REVOKE ALL ON FUNCTION' in sql
 print('Static contract checks passed (NOT integration/security validation)')
