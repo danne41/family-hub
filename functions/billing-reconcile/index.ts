@@ -14,21 +14,28 @@ Deno.serve(async(req)=>{
  if(diff!==0)return new Response("Unauthorized",{status:401});
  try{
   const database=db(),stripeClient=stripe();
-  // Stable keyset pagination: updated_at changes during reconciliation, so never page by it.
-  // The authenticated caller must carry nextCursor into the next invocation.
-  let payload:unknown;
-  try{payload=await req.json();}catch{return new Response("Invalid JSON",{status:400});}
-  const cursor=(payload && typeof payload==="object" && "cursor" in payload)?(payload as {cursor:unknown}).cursor:null;
-  if(cursor!==null && (typeof cursor!=="string" || !/^sub_[A-Za-z0-9]+$/.test(cursor)))
-   return new Response("Invalid cursor",{status:400});
+  // Durable checkpoint and single-worker lease; callers cannot override progress.
+  const leaseToken=crypto.randomUUID();
+  const {data:claimed,error:claimError}=await database.rpc("famunova_claim_reconcile_job",{p_token:leaseToken});
+  if(claimError)throw claimError;
+  const claim=claimed?.[0];
+  if(!claim?.acquired)return new Response(JSON.stringify({busy:true}),{
+   status:409,headers:{"Content-Type":"application/json","Cache-Control":"no-store"}});
+  const cursor:string|null=claim.next_cursor||null;
+  async function finish(next:string|null,errorMessage:string|null){
+   const {error}=await database.rpc("famunova_finish_reconcile_job",{
+    p_token:leaseToken,p_next_cursor:next,p_error:errorMessage
+   });
+   if(error)throw error;
+  }
   let query=database.from("billing_subscriptions")
    .select("stripe_subscription_id,user_id,group_id,stripe_customer_id")
-   .not("group_id","is",null).order("stripe_subscription_id",{ascending:true}).limit(26);
+   .not("group_id","is",null).order("stripe_subscription_id",{ascending:true}).limit(11);
   if(cursor)query=query.gt("stripe_subscription_id",cursor);
   const {data,error}=await query;
   if(error)throw error;
-  const batch=(data||[]).slice(0,25);
-  const hasMore=(data||[]).length>25;
+  const batch=(data||[]).slice(0,10);
+  const hasMore=(data||[]).length>10;
   const nextCursor=hasMore?batch[batch.length-1].stripe_subscription_id:null;
   let updated=0,failed=0,skipped=0;
   let lastCompletedCursor=cursor;
@@ -59,12 +66,14 @@ Deno.serve(async(req)=>{
     failed++;console.error("reconcile subscription",row.stripe_subscription_id,e);
     // Stop at first failure: caller must retry from last successful cursor.
     // Never advance past a failed subscription silently.
+    await finish(lastCompletedCursor,String(e));
     return new Response(JSON.stringify({checked:updated+failed,updated,failed,skipped,
      retryCursor:lastCompletedCursor,failedSubscriptionId:row.stripe_subscription_id,
      nextCursor:null,hasMore:true}),{
      status:503,headers:{"Content-Type":"application/json","Cache-Control":"no-store"}});
    }
   }
+  await finish(nextCursor,null);
   return new Response(JSON.stringify({checked:batch.length,updated,failed,skipped,nextCursor,hasMore,retryCursor:null}),{
    status:failed?503:200,headers:{"Content-Type":"application/json","Cache-Control":"no-store"}});
  }catch(e){console.error("reconcile batch",e);return new Response("Retry later",{status:503});}
