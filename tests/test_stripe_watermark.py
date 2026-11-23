@@ -7,6 +7,6 @@ assert 'stripe_event_created bigint' in sql
 assert 'p_event_created<=v_previous.stripe_event_created' in sql
 assert 'FOR UPDATE' in sql
 assert "RETURN 'stale'" in sql
-assert 'p_event_created:event.created' in webhook
-assert 'famunova_apply_stripe_event_v2' in webhook
+assert 'p_observed_at:observedAt' in webhook
+assert 'famunova_reconcile_stripe_subscription' in webhook
 print('Watermark static checks passed; DB/Stripe integration NOT run')
