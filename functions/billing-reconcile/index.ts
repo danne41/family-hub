@@ -22,6 +22,8 @@ Deno.serve(async(req)=>{
   if(!claim?.acquired)return new Response(JSON.stringify({busy:true}),{
    status:409,headers:{"Content-Type":"application/json","Cache-Control":"no-store"}});
   const cursor:string|null=claim.next_cursor||null;
+  // Stay comfortably within the three-minute database lease.
+  const deadline=Date.now()+90_000;
   async function finish(next:string|null,errorMessage:string|null){
    const {error}=await database.rpc("famunova_finish_reconcile_job",{
     p_token:leaseToken,p_next_cursor:next,p_error:errorMessage
@@ -41,6 +43,7 @@ Deno.serve(async(req)=>{
   let lastCompletedCursor=cursor;
   for(const row of batch){
    try{
+    if(Date.now()>=deadline)throw new Error("Reconciliation batch time budget exceeded");
     if(!uuid(row.group_id)||!uuid(row.user_id))throw new Error('Invalid stored family or user identifier');
     const observedAt=new Date().toISOString();
     const sub=await stripeClient.subscriptions.retrieve(row.stripe_subscription_id);
@@ -72,6 +75,11 @@ Deno.serve(async(req)=>{
      nextCursor:null,hasMore:true}),{
      status:503,headers:{"Content-Type":"application/json","Cache-Control":"no-store"}});
    }
+  }
+  if(Date.now()>=deadline){
+   await finish(cursor,"Reconciliation batch time budget exceeded");
+   return new Response(JSON.stringify({error:"Batch timed out; retry from saved checkpoint"}),{
+    status:503,headers:{"Content-Type":"application/json","Cache-Control":"no-store"}});
   }
   await finish(nextCursor,null);
   return new Response(JSON.stringify({checked:batch.length,updated,failed,skipped,nextCursor,hasMore,retryCursor:null}),{
