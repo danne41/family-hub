@@ -20,13 +20,30 @@ Deno.serve(async(req)=>{
    const {error}=await client.rpc("famunova_bind_family_customer",{p_group:groupId,p_owner:user.id,p_customer:customerId});if(error)throw error;}
   // Atomically reserve this family BEFORE creating a Stripe Checkout Session.
   // Reservations remain blocked until Stripe confirms a terminal unpaid session.
-  const {data:pending,error:pendingError}=await client.from("famunova_checkout_reservations").select("reservation_key,stripe_session_id,owner_id").eq("group_id",groupId).maybeSingle();
+  const {data:pending,error:pendingError}=await client.from("famunova_checkout_reservations").select("reservation_key,stripe_session_id,owner_id,price_id").eq("group_id",groupId).maybeSingle();
   if(pendingError)throw pendingError;
   if(pending){
-   if(pending.owner_id!==user.id||!pending.stripe_session_id)return json({error:"Checkout requires reconciliation"},409,origin);
-   const previous=await stripeClient.checkout.sessions.retrieve(pending.stripe_session_id);
+   if(pending.owner_id!==user.id)return json({error:"Checkout requires reconciliation"},409,origin);
+   let sessionId=pending.stripe_session_id;
+   if(!sessionId){
+    // Recover only an existing session; never recreate an ambiguous request.
+    const matches:string[]=[];
+    for await(const candidate of stripeClient.checkout.sessions.list({customer:customerId,limit:100})){
+     if(candidate.metadata?.reservation_key===pending.reservation_key)matches.push(candidate.id);
+     if(matches.length>1)break;
+    }
+    if(matches.length!==1)return json({error:"Checkout requires reconciliation"},409,origin);
+    sessionId=matches[0];
+   }
+   const previous=await stripeClient.checkout.sessions.retrieve(sessionId);
    const previousCustomer=typeof previous.customer==="string"?previous.customer:previous.customer?.id;
    if(previous.livemode||previousCustomer!==customerId||previous.metadata?.family_group_id!==groupId||previous.metadata?.supabase_user_id!==user.id||previous.metadata?.reservation_key!==pending.reservation_key)return json({error:"Checkout requires reconciliation"},409,origin);
+   if(!pending.stripe_session_id){
+    const {data:recovered,error:recoverError}=await client.rpc("famunova_bind_checkout_session",{p_group:groupId,p_key:pending.reservation_key,p_session:previous.id});
+    if(recoverError)throw recoverError;
+    if(recovered!==true)return json({error:"Checkout state changed"},409,origin);
+   }
+   if(pending.price_id===priceId&&previous.status==="open"&&previous.payment_status==="unpaid"&&previous.url?.startsWith("https://checkout.stripe.com/"))return json({url:previous.url},200,origin);
    if(previous.status!=="expired"||previous.payment_status!=="unpaid"||previous.subscription)return json({error:"Previous checkout not safely expired"},409,origin);
    const {data:released,error:releaseError}=await client.rpc("famunova_release_expired_checkout",{p_group:groupId,p_key:pending.reservation_key,p_session:previous.id});
    if(releaseError)throw releaseError;
