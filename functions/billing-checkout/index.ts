@@ -47,8 +47,17 @@ export function createHandler(deps={db,stripe,userFromRequest,isOwner}){
    }
    const decision=checkoutDecision(previous,pending.price_id===priceId);
    if(decision==="resume")return json({url:previous.url},200,origin);
-   if(decision!=="release")return json({error:"Previous checkout not safely expired"},409,origin);
-   const {data:released,error:releaseError}=await client.rpc("famunova_release_expired_checkout",{p_group:groupId,p_key:pending.reservation_key,p_session:previous.id});
+   const previousSub=typeof previous.subscription==="string"?previous.subscription:previous.subscription?.id;
+   let release;
+   if(decision==="release"){
+    release=await client.rpc("famunova_release_expired_checkout",{p_group:groupId,p_key:pending.reservation_key,p_session:previous.id});
+   }else if(previous.status==="complete"&&previous.mode==="subscription"&&previousSub){
+    const remote=await stripeClient.subscriptions.retrieve(previousSub);
+    const remoteCustomer=typeof remote.customer==="string"?remote.customer:remote.customer.id;
+    if(remote.livemode||remote.id!==previousSub||remoteCustomer!==customerId||remote.metadata?.family_group_id!==groupId||remote.metadata?.supabase_user_id!==user.id||!["canceled","incomplete_expired"].includes(remote.status))return json({error:"Previous subscription not safely ended"},409,origin);
+    release=await client.rpc("famunova_release_completed_checkout",{p_group:groupId,p_key:pending.reservation_key,p_session:previous.id,p_subscription:previousSub});
+   }else return json({error:"Previous checkout not safely expired"},409,origin);
+   const {data:released,error:releaseError}=release;
    if(releaseError)throw releaseError;
    if(released!==true)return json({error:"Checkout state changed"},409,origin);
   }
