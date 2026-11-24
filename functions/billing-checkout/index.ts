@@ -11,7 +11,7 @@ Deno.serve(async(req)=>{
   const body=await req.json();const groupId=body?.groupId,priceId=body?.priceId;
   if(!uuid(groupId)||typeof priceId!=="string"||!Object.hasOwn(priceMap,priceId))return json({error:"Invalid group or price"},400,origin);
   if(!await isOwner(groupId,user.id))return json({error:"Only group owner may subscribe"},403,origin);
-  const client=db();const {data:active,error:activeError}=await client.from("billing_subscriptions").select("stripe_subscription_id").eq("group_id",groupId).in("status",["active","trialing","past_due","unpaid","incomplete"]).limit(1);
+  const client=db();const {data:active,error:activeError}=await client.from("billing_subscriptions").select("stripe_subscription_id").eq("group_id",groupId).in("status",["active","trialing","past_due","unpaid","incomplete","paused"]).limit(1);
   if(activeError)throw activeError;
   if(active?.length)return json({error:"Group already has a subscription"},409,origin);
   const stripeClient=stripe();const {data:existing,error:customerError}=await client.from("billing_customers").select("stripe_customer_id").eq("user_id",user.id).maybeSingle();if(customerError)throw customerError;
@@ -19,13 +19,28 @@ Deno.serve(async(req)=>{
   if(!customerId){const customer=await stripeClient.customers.create({email:user.email||undefined,metadata:{supabase_user_id:user.id}},{idempotencyKey:`famunova-test-customer-${user.id}`});customerId=customer.id;
    const {error}=await client.from("billing_customers").upsert({user_id:user.id,stripe_customer_id:customerId},{onConflict:"user_id"});if(error)throw error;}
   // Atomically reserve this family BEFORE creating a Stripe Checkout Session.
-  // Pending reservations expire after 35 minutes; Stripe sessions expire after 30 minutes.
+  // Reservations remain blocked until Stripe confirms a terminal unpaid session.
+  const {data:pending,error:pendingError}=await client.from("famunova_checkout_reservations").select("reservation_key,stripe_session_id,owner_id").eq("group_id",groupId).maybeSingle();
+  if(pendingError)throw pendingError;
+  if(pending){
+   if(pending.owner_id!==user.id||!pending.stripe_session_id)return json({error:"Checkout requires reconciliation"},409,origin);
+   const previous=await stripeClient.checkout.sessions.retrieve(pending.stripe_session_id);
+   const previousCustomer=typeof previous.customer==="string"?previous.customer:previous.customer?.id;
+   if(previous.livemode||previousCustomer!==customerId||previous.metadata?.family_group_id!==groupId||previous.metadata?.supabase_user_id!==user.id||previous.metadata?.reservation_key!==pending.reservation_key)return json({error:"Checkout requires reconciliation"},409,origin);
+   if(previous.status!=="expired"||previous.payment_status!=="unpaid"||previous.subscription)return json({error:"Previous checkout not safely expired"},409,origin);
+   const {data:released,error:releaseError}=await client.rpc("famunova_release_expired_checkout",{p_group:groupId,p_key:pending.reservation_key,p_session:previous.id});
+   if(releaseError)throw releaseError;
+   if(released!==true)return json({error:"Checkout state changed"},409,origin);
+  }
   const reservationKey=crypto.randomUUID();
   const {data:admission,error:reservationError}=await client.rpc("famunova_reserve_checkout_internal",
    {p_group_id:groupId,p_owner_id:user.id,p_price_id:priceId,p_key:reservationKey});
   if(reservationError)throw reservationError;
   if(admission!=="acquired")return json({error:admission==="subscribed"?"Group already subscribed":"Checkout already pending for this family"},409,origin);
-  const session=await stripeClient.checkout.sessions.create({mode:"subscription",customer:customerId,line_items:[{price:priceId,quantity:1}],client_reference_id:user.id,metadata:{supabase_user_id:user.id,family_group_id:groupId},subscription_data:{metadata:{supabase_user_id:user.id,family_group_id:groupId}},success_url:`${appOrigin}/?billing=success`,cancel_url:`${appOrigin}/?billing=cancel`,allow_promotion_codes:false,expires_at:Math.floor(Date.now()/1000)+1800},{idempotencyKey:`famunova-checkout-${reservationKey}`});
+  const session=await stripeClient.checkout.sessions.create({mode:"subscription",customer:customerId,line_items:[{price:priceId,quantity:1}],client_reference_id:user.id,metadata:{supabase_user_id:user.id,family_group_id:groupId,reservation_key:reservationKey},subscription_data:{metadata:{supabase_user_id:user.id,family_group_id:groupId}},success_url:`${appOrigin}/?billing=success`,cancel_url:`${appOrigin}/?billing=cancel`,allow_promotion_codes:false,expires_at:Math.floor(Date.now()/1000)+1800},{idempotencyKey:`famunova-checkout-${reservationKey}`});
+  if(session.livemode)throw new Error("Unexpected live session");
+  const {data:bound,error:bindError}=await client.rpc("famunova_bind_checkout_session",{p_group:groupId,p_key:reservationKey,p_session:session.id});
+  if(bindError||bound!==true)throw new Error("Session binding failed");
   if(!session.url||!session.url.startsWith("https://checkout.stripe.com/"))throw new Error("Unexpected checkout URL");
   return json({url:session.url},200,origin);
  }catch(error){console.error("checkout",error);return json({error:"Checkout failed"},500,origin);}
