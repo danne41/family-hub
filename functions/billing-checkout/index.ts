@@ -1,6 +1,6 @@
 // DRAFT ONLY: Supabase test project. No production deployment.
 import {appOrigin,configured,originAllowed,cors,json,db,userFromRequest,priceMap,stripe,uuid,isOwner} from "../_shared/billing.ts";
-Deno.serve(async(req)=>{
+export async function handler(req:Request):Promise<Response>{
  const origin=req.headers.get("Origin")||"";
  if(!originAllowed(origin))return new Response("Forbidden",{status:403});
  if(req.method==="OPTIONS")return new Response(null,{status:204,headers:cors(origin)});
@@ -61,4 +61,5 @@ Deno.serve(async(req)=>{
   if(!session.url||!session.url.startsWith("https://checkout.stripe.com/"))throw new Error("Unexpected checkout URL");
   return json({url:session.url},200,origin);
  }catch(error){console.error("checkout",error);return json({error:"Checkout failed"},500,origin);}
-});
+}
+if(import.meta.main)Deno.serve(handler);
