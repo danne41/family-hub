@@ -25,6 +25,10 @@ BEGIN
  g:=public.famunova_begin_stripe_observation('sub_TestA');
  r:=public.famunova_apply_stripe_observation('evt_Cancel',g,'sub_TestA',u,a,'cus_TestA',p,'plus','month','canceled',now(),false);
  IF r IS DISTINCT FROM 'applied' OR public.famunova_group_plan_internal(a) IS DISTINCT FROM 'free' THEN RAISE EXCEPTION 'Downgrade failed'; END IF;
+ IF public.famunova_release_completed_checkout(a,k,'cs_test_TestA','sub_Wrong') THEN RAISE EXCEPTION 'Wrong subscription released'; END IF;
+ IF NOT public.famunova_release_completed_checkout(a,k,'cs_test_TestA','sub_TestA') THEN RAISE EXCEPTION 'Completed reservation not released'; END IF;
+ IF public.famunova_reserve_checkout_internal(a,u,p,gen_random_uuid()) IS DISTINCT FROM 'acquired' THEN RAISE EXCEPTION 'Resubscription blocked'; END IF;
+ IF has_function_privilege('authenticated','public.famunova_release_completed_checkout(uuid,uuid,text,text)','EXECUTE') THEN RAISE EXCEPTION 'Unauthorized release'; END IF;
  IF has_function_privilege('authenticated','public.famunova_begin_stripe_observation(text)','EXECUTE') THEN RAISE EXCEPTION 'Client can allocate observation'; END IF;
  -- Reject invalid customer and price, and a second active subscription.
  g:=public.famunova_begin_stripe_observation('sub_TestB');
