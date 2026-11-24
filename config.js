@@ -1,8 +1,5 @@
-// Publika Supabase-inställningar. ALDRIG service_role-nyckeln här.
-// Ersätt värdena efter att du skapat ett Supabase-projekt.
-
+// Famunova development/test configuration. Public browser key only.
 window.FAMILY_HUB_SUPABASE = {
-  url: "https://edqcdqgtdyhsqzzbotpo.supabase.co",
-  anonKey: "sb_publishable_0sytMGavTl5SZVUAke4-9g_zlOxL2Xq"
+  url: "https://lbldwxzexekqpocsxygi.supabase.co",
+  anonKey: "sb_publishable_o519rbvnkmR4PC1Duz4j7g_LJBZ9-FR"
 };
-  
