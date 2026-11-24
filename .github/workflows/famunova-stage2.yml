@@ -34,6 +34,7 @@ jobs:
             psql 'postgresql://postgres:postgres@127.0.0.1:54322/postgres' -X -v ON_ERROR_STOP=1 -f "$migration"
           done
           psql 'postgresql://postgres:postgres@127.0.0.1:54322/postgres' -X -v ON_ERROR_STOP=1 -f tests/stage1_clean_smoke.sql
+          psql 'postgresql://postgres:postgres@127.0.0.1:54322/postgres' -X -v ON_ERROR_STOP=1 -f tests/stage2_billing_smoke.sql
       - name: Stop local database
         if: always()
         run: |
