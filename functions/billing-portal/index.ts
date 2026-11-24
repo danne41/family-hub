@@ -15,7 +15,19 @@ Deno.serve(async(req)=>{
   // Block multi-group customers until portal behavior is explicitly approved.
   const {data:all,error:allError}=await client.from("billing_subscriptions").select("group_id").eq("user_id",user.id);if(allError)throw allError;
   if(new Set((all||[]).map(x=>x.group_id)).size>1)return json({error:"Multi-family portal requires review"},409,origin);
-  const session=await stripe().billingPortal.sessions.create({customer:customer.stripe_customer_id,return_url:`${appOrigin}/?billing=portal`});
-  if(!session.url?.startsWith("https://billing.stripe.com/"))throw new Error("Unexpected portal URL");return json({url:session.url},200,origin);
+  // Fail closed if Stripe has any subscription outside the selected family,
+  // including subscriptions not yet recorded by our webhook.
+  const stripeClient=stripe();
+  let matched=false;
+  for await(const remote of stripeClient.subscriptions.list({customer:customer.stripe_customer_id,status:"all",limit:100})){
+   if(remote.livemode||remote.metadata?.family_group_id!==body.groupId||remote.metadata?.supabase_user_id!==user.id)return json({error:"Multi-family or unknown Stripe subscription requires review"},409,origin);
+   if(remote.id===sub[0].stripe_subscription_id)matched=true;
+  }
+  if(!matched)return json({error:"Subscription reconciliation required"},409,origin);
+  // A customer-wide portal cannot guarantee isolation from future subscriptions.
+  // Keep disabled until dedicated per-family customer isolation is implemented.
+  return json({error:"Family-isolated portal not yet available"},503,origin);
+  /* const session=await stripeClient.billingPortal.sessions.create({customer:customer.stripe_customer_id,return_url:`${appOrigin}/?billing=portal`});
+  if(!session.url?.startsWith("https://billing.stripe.com/"))throw new Error("Unexpected portal URL");return json({url:session.url},200,origin); */
  }catch(e){console.error("portal",e);return json({error:"Portal failed"},500,origin);}
 });
