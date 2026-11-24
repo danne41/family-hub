@@ -26,8 +26,8 @@ Deno.serve(async(req)=>{
   const groupId=sub.metadata?.family_group_id,userId=sub.metadata?.supabase_user_id;
   if(!uuid(groupId)||!uuid(userId))throw new Error("Missing verified group metadata");
   const customerId=typeof sub.customer==="string"?sub.customer:sub.customer.id;
-  const {data:owner,error:ownerError}=await database.from("billing_customers").select("user_id").eq("stripe_customer_id",customerId).single();
-  if(ownerError||owner.user_id!==userId)throw new Error("Customer mismatch");
+  const {data:owner,error:ownerError}=await database.from("famunova_family_billing_customers").select("owner_id").eq("group_id",groupId).eq("stripe_customer_id",customerId).single();
+  if(ownerError||owner.owner_id!==userId)throw new Error("Customer mismatch");
   const item=sub.items.data[0];if(sub.items.data.length!==1||!item)throw new Error("Unexpected subscription items");
   const plan=Object.hasOwn(priceMap,item.price.id)?priceMap[item.price.id]:null;if(!plan)throw new Error("Unapproved Stripe price");
   const {data,error}=await database.rpc("famunova_apply_stripe_observation",{p_event_id:event.id,p_generation:generation,p_subscription_id:sub.id,p_user_id:userId,p_group_id:groupId,p_customer_id:customerId,p_price_id:item.price.id,p_plan:plan.plan,p_interval:plan.interval,p_status:sub.status,p_period_end:item.current_period_end?new Date(item.current_period_end*1000).toISOString():null,p_cancel_at_period_end:sub.cancel_at_period_end});
