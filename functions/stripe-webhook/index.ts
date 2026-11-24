@@ -2,7 +2,7 @@
 import Stripe from "npm:stripe@22";
 import {configured,db,key,stripe,priceMap,uuid} from "../_shared/billing.ts";
 const secret=Deno.env.get("STRIPE_WEBHOOK_SECRET")||"";
-Deno.serve(async(req)=>{
+export async function handler(req:Request):Promise<Response>{
  if(req.method!=="POST")return new Response("Method not allowed",{status:405});
  if(!configured()||!secret.startsWith("whsec_"))return new Response("Not configured",{status:503});
  const signature=req.headers.get("stripe-signature");if(!signature)return new Response("Missing signature",{status:400});
@@ -35,4 +35,5 @@ Deno.serve(async(req)=>{
   if(data!=="applied"&&data!=="duplicate")return new Response("Retry later",{status:503});
   return new Response("ok",{status:200});
  }catch(error){console.error("stripe webhook",error);return new Response("Retry later",{status:500});}
-});
+}
+if(import.meta.main)Deno.serve(handler);
