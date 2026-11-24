@@ -1,0 +1,21 @@
+name: Famunova stage 2 billing code
+on:
+  push:
+    branches: [feature/famunova-v1]
+    paths:
+      - 'functions/**'
+      - '.github/workflows/famunova-stage2-code.yml'
+permissions:
+  contents: read
+jobs:
+  billing-typecheck:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Check billing TypeScript and dependencies
+        run: |
+          deno check functions/_shared/billing.ts functions/billing-checkout/index.ts functions/billing-portal/index.ts functions/stripe-webhook/index.ts
