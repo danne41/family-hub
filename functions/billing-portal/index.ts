@@ -1,6 +1,6 @@
 // TEST ONLY. Customer identity is isolated per family by migration 013.
 import {configured,originAllowed,cors,json,db,userFromRequest,stripe,uuid,isOwner,appOrigin} from "../_shared/billing.ts";
-Deno.serve(async(req)=>{
+export async function handler(req:Request):Promise<Response>{
  const origin=req.headers.get("Origin")||"";if(!originAllowed(origin))return new Response("Forbidden",{status:403});
  if(req.method==="OPTIONS")return new Response(null,{status:204,headers:cors(origin)});
  if(req.method!=="POST")return json({error:"Method not allowed"},405,origin);
@@ -29,4 +29,5 @@ Deno.serve(async(req)=>{
   const session=await stripeClient.billingPortal.sessions.create({customer:customer.stripe_customer_id,return_url:`${appOrigin}/?billing=portal`});
   if(!session.url?.startsWith("https://billing.stripe.com/"))throw new Error("Unexpected portal URL");return json({url:session.url},200,origin);
  }catch(e){console.error("portal",e);return json({error:"Portal failed"},500,origin);}
-});
+}
+if(import.meta.main)Deno.serve(handler);
