@@ -1,21 +1,22 @@
 // DRAFT ONLY: Supabase test project. No production deployment.
 import {appOrigin,configured,originAllowed,cors,json,db,userFromRequest,priceMap,stripe,uuid,isOwner} from "../_shared/billing.ts";
 import {checkoutDecision} from "../_shared/checkout-decision.ts";
-export async function handler(req:Request):Promise<Response>{
+export function createHandler(deps={db,stripe,userFromRequest,isOwner}){
+ return async function handler(req:Request):Promise<Response>{
  const origin=req.headers.get("Origin")||"";
  if(!originAllowed(origin))return new Response("Forbidden",{status:403});
  if(req.method==="OPTIONS")return new Response(null,{status:204,headers:cors(origin)});
  if(req.method!=="POST")return json({error:"Method not allowed"},405,origin);
  if(!configured())return json({error:"Test configuration missing"},503,origin);
  try{
-  const user=await userFromRequest(req);if(!user)return json({error:"Unauthorized"},401,origin);
+  const user=await deps.userFromRequest(req);if(!user)return json({error:"Unauthorized"},401,origin);
   const body=await req.json();const groupId=body?.groupId,priceId=body?.priceId;
   if(!uuid(groupId)||typeof priceId!=="string"||!Object.hasOwn(priceMap,priceId))return json({error:"Invalid group or price"},400,origin);
-  if(!await isOwner(groupId,user.id))return json({error:"Only group owner may subscribe"},403,origin);
-  const client=db();const {data:active,error:activeError}=await client.from("billing_subscriptions").select("stripe_subscription_id").eq("group_id",groupId).in("status",["active","trialing","past_due","unpaid","incomplete","paused"]).limit(1);
+  if(!await deps.isOwner(groupId,user.id))return json({error:"Only group owner may subscribe"},403,origin);
+  const client=deps.db();const {data:active,error:activeError}=await client.from("billing_subscriptions").select("stripe_subscription_id").eq("group_id",groupId).in("status",["active","trialing","past_due","unpaid","incomplete","paused"]).limit(1);
   if(activeError)throw activeError;
   if(active?.length)return json({error:"Group already has a subscription"},409,origin);
-  const stripeClient=stripe();const {data:existing,error:customerError}=await client.from("famunova_family_billing_customers").select("stripe_customer_id").eq("group_id",groupId).eq("owner_id",user.id).maybeSingle();if(customerError)throw customerError;
+  const stripeClient=deps.stripe();const {data:existing,error:customerError}=await client.from("famunova_family_billing_customers").select("stripe_customer_id").eq("group_id",groupId).eq("owner_id",user.id).maybeSingle();if(customerError)throw customerError;
   let customerId=existing?.stripe_customer_id;
   if(!customerId){const customer=await stripeClient.customers.create({email:user.email||undefined,metadata:{supabase_user_id:user.id,family_group_id:groupId}},{idempotencyKey:`famunova-test-family-customer-${groupId}`});customerId=customer.id;
    const {error}=await client.rpc("famunova_bind_family_customer",{p_group:groupId,p_owner:user.id,p_customer:customerId});if(error)throw error;}
@@ -64,4 +65,6 @@ export async function handler(req:Request):Promise<Response>{
   return json({url:session.url},200,origin);
  }catch(error){console.error("checkout",error);return json({error:"Checkout failed"},500,origin);}
 }
+}
+export const handler=createHandler();
 if(import.meta.main)Deno.serve(handler);
