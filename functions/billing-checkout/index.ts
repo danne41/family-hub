@@ -14,10 +14,10 @@ Deno.serve(async(req)=>{
   const client=db();const {data:active,error:activeError}=await client.from("billing_subscriptions").select("stripe_subscription_id").eq("group_id",groupId).in("status",["active","trialing","past_due","unpaid","incomplete","paused"]).limit(1);
   if(activeError)throw activeError;
   if(active?.length)return json({error:"Group already has a subscription"},409,origin);
-  const stripeClient=stripe();const {data:existing,error:customerError}=await client.from("billing_customers").select("stripe_customer_id").eq("user_id",user.id).maybeSingle();if(customerError)throw customerError;
+  const stripeClient=stripe();const {data:existing,error:customerError}=await client.from("famunova_family_billing_customers").select("stripe_customer_id").eq("group_id",groupId).eq("owner_id",user.id).maybeSingle();if(customerError)throw customerError;
   let customerId=existing?.stripe_customer_id;
-  if(!customerId){const customer=await stripeClient.customers.create({email:user.email||undefined,metadata:{supabase_user_id:user.id}},{idempotencyKey:`famunova-test-customer-${user.id}`});customerId=customer.id;
-   const {error}=await client.from("billing_customers").upsert({user_id:user.id,stripe_customer_id:customerId},{onConflict:"user_id"});if(error)throw error;}
+  if(!customerId){const customer=await stripeClient.customers.create({email:user.email||undefined,metadata:{supabase_user_id:user.id,family_group_id:groupId}},{idempotencyKey:`famunova-test-family-customer-${groupId}`});customerId=customer.id;
+   const {error}=await client.rpc("famunova_bind_family_customer",{p_group:groupId,p_owner:user.id,p_customer:customerId});if(error)throw error;}
   // Atomically reserve this family BEFORE creating a Stripe Checkout Session.
   // Reservations remain blocked until Stripe confirms a terminal unpaid session.
   const {data:pending,error:pendingError}=await client.from("famunova_checkout_reservations").select("reservation_key,stripe_session_id,owner_id").eq("group_id",groupId).maybeSingle();
