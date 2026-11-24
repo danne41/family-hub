@@ -1,0 +1,41 @@
+name: Famunova stage 2 billing database
+on:
+  push:
+    branches: [feature/famunova-v1]
+    paths:
+      - 'install/**'
+      - '*.sql'
+      - 'tests/**'
+      - '.github/workflows/famunova-stage2.yml'
+permissions:
+  contents: read
+jobs:
+  clean-install:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.39.2
+      - name: Start isolated local database
+        run: |
+          mkdir -p /tmp/famunova-ci
+          cd /tmp/famunova-ci
+          supabase init
+          supabase db start
+      - name: Install and test
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y postgresql-client
+          psql 'postgresql://postgres:postgres@127.0.0.1:54322/postgres' -X -v ON_ERROR_STOP=1 -f install/famunova_stage1_clean_test.sql
+          psql 'postgresql://postgres:postgres@127.0.0.1:54322/postgres' -X -v ON_ERROR_STOP=1 -f tests/stage1_clean_smoke.sql
+          for migration in 004_stripe_event_atomic.sql 005_checkout_reservation.sql 006_stripe_event_watermark.sql 009_stripe_reconciliation_generation.sql 010_stripe_apply_observation.sql 011_checkout_fail_closed.sql 012_checkout_session_tracking.sql 013_family_billing_customers.sql 014_family_customer_reconciliation.sql; do
+            psql 'postgresql://postgres:postgres@127.0.0.1:54322/postgres' -X -v ON_ERROR_STOP=1 -f "$migration"
+          done
+          psql 'postgresql://postgres:postgres@127.0.0.1:54322/postgres' -X -v ON_ERROR_STOP=1 -f tests/stage1_clean_smoke.sql
+      - name: Stop local database
+        if: always()
+        run: |
+          cd /tmp/famunova-ci
+          supabase stop --no-backup
