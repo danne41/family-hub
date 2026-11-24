@@ -1,5 +1,6 @@
 // DRAFT ONLY: Supabase test project. No production deployment.
 import {appOrigin,configured,originAllowed,cors,json,db,userFromRequest,priceMap,stripe,uuid,isOwner} from "../_shared/billing.ts";
+import {checkoutDecision} from "../_shared/checkout-decision.ts";
 export async function handler(req:Request):Promise<Response>{
  const origin=req.headers.get("Origin")||"";
  if(!originAllowed(origin))return new Response("Forbidden",{status:403});
@@ -43,8 +44,9 @@ export async function handler(req:Request):Promise<Response>{
     if(recoverError)throw recoverError;
     if(recovered!==true)return json({error:"Checkout state changed"},409,origin);
    }
-   if(pending.price_id===priceId&&previous.status==="open"&&previous.payment_status==="unpaid"&&previous.url?.startsWith("https://checkout.stripe.com/"))return json({url:previous.url},200,origin);
-   if(previous.status!=="expired"||previous.payment_status!=="unpaid"||previous.subscription)return json({error:"Previous checkout not safely expired"},409,origin);
+   const decision=checkoutDecision(previous,pending.price_id===priceId);
+   if(decision==="resume")return json({url:previous.url},200,origin);
+   if(decision!=="release")return json({error:"Previous checkout not safely expired"},409,origin);
    const {data:released,error:releaseError}=await client.rpc("famunova_release_expired_checkout",{p_group:groupId,p_key:pending.reservation_key,p_session:previous.id});
    if(releaseError)throw releaseError;
    if(released!==true)return json({error:"Checkout state changed"},409,origin);
