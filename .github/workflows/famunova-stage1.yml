@@ -1,0 +1,36 @@
+name: Famunova stage 1 database
+on:
+  push:
+    branches: [feature/famunova-v1]
+    paths:
+      - 'install/**'
+      - 'tests/stage1_clean_smoke.sql'
+      - '.github/workflows/famunova-stage1.yml'
+permissions:
+  contents: read
+jobs:
+  clean-install:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.39.2
+      - name: Start isolated local database
+        run: |
+          mkdir -p /tmp/famunova-ci
+          cd /tmp/famunova-ci
+          supabase init
+          supabase db start
+      - name: Install and test
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y postgresql-client
+          psql 'postgresql://postgres:postgres@127.0.0.1:54322/postgres' -X -v ON_ERROR_STOP=1 -f install/famunova_stage1_clean_test.sql
+          psql 'postgresql://postgres:postgres@127.0.0.1:54322/postgres' -X -v ON_ERROR_STOP=1 -f tests/stage1_clean_smoke.sql
+      - name: Stop local database
+        if: always()
+        run: |
+          cd /tmp/famunova-ci
+          supabase stop --no-backup
