@@ -2,11 +2,12 @@
 import Stripe from "npm:stripe@22";
 import {configured,db,key,stripe,priceMap,uuid} from "../_shared/billing.ts";
 const secret=Deno.env.get("STRIPE_WEBHOOK_SECRET")||"";
-export async function handler(req:Request):Promise<Response>{
+export function createHandler(deps={db,stripe}){
+return async function handler(req:Request):Promise<Response>{
  if(req.method!=="POST")return new Response("Method not allowed",{status:405});
  if(!configured()||!secret.startsWith("whsec_"))return new Response("Not configured",{status:503});
  const signature=req.headers.get("stripe-signature");if(!signature)return new Response("Missing signature",{status:400});
- const client=stripe();let event:Stripe.Event;
+ const client=deps.stripe();let event:Stripe.Event;
  try{event=await client.webhooks.constructEventAsync(await req.text(),signature,secret);}catch{return new Response("Invalid signature",{status:400});}
  const types=["checkout.session.completed","customer.subscription.created","customer.subscription.updated","customer.subscription.deleted"];
  if(event.livemode)return new Response("Live events disabled",{status:400});
@@ -19,10 +20,11 @@ export async function handler(req:Request):Promise<Response>{
    subscriptionId=typeof session.subscription==="string"?session.subscription:session.subscription.id;
   }else subscriptionId=(event.data.object as Stripe.Subscription).id;
   // Always fetch current Stripe state, including after deletion, rather than trusting stale event snapshots.
-  const database=db();
+  const database=deps.db();
   const {data:generation,error:beginError}=await database.rpc("famunova_begin_stripe_observation",{p_subscription_id:subscriptionId});
   if(beginError||!Number.isSafeInteger(generation)||generation<1)throw new Error("Observation allocation failed");
   const sub=await client.subscriptions.retrieve(subscriptionId);
+  if(sub.livemode||sub.id!==subscriptionId)throw new Error("Unexpected subscription identity");
   const groupId=sub.metadata?.family_group_id,userId=sub.metadata?.supabase_user_id;
   if(!uuid(groupId)||!uuid(userId))throw new Error("Missing verified group metadata");
   const customerId=typeof sub.customer==="string"?sub.customer:sub.customer.id;
@@ -36,4 +38,6 @@ export async function handler(req:Request):Promise<Response>{
   return new Response("ok",{status:200});
  }catch(error){console.error("stripe webhook",error);return new Response("Retry later",{status:500});}
 }
+}
+export const handler=createHandler();
 if(import.meta.main)Deno.serve(handler);
