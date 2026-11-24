@@ -20,4 +20,4 @@ jobs:
         run: |
           deno check functions/_shared/billing.ts functions/billing-checkout/index.ts functions/billing-portal/index.ts functions/stripe-webhook/index.ts
       - name: Run request guard tests without network permission
-        run: deno test --allow-env functions/tests/billing_requests_test.ts
+        run: deno test --allow-env functions/tests/
