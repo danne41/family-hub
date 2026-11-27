@@ -4,6 +4,8 @@ on:
     branches: [feature/famunova-v1]
     paths:
       - 'functions/**'
+      - 'billing.js'
+      - 'tests/test_billing_family_ui.py'
       - '.github/workflows/famunova-stage2-code.yml'
 permissions:
   contents: read
@@ -21,3 +23,7 @@ jobs:
           deno check functions/_shared/billing.ts functions/billing-checkout/index.ts functions/billing-portal/index.ts functions/stripe-webhook/index.ts
       - name: Run request guard tests without network permission
         run: deno test --allow-env functions/tests/
+      - name: Check frontend JavaScript syntax
+        run: node --check billing.js
+      - name: Check frontend billing contract
+        run: python3 tests/test_billing_family_ui.py
