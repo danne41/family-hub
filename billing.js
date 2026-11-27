@@ -6,7 +6,7 @@
  const picker=document.createElement('label');picker.textContent='Familj som ska få abonnemanget ';
  const select=document.createElement('select');select.id='billing-family-select';select.setAttribute('aria-label','Välj familj för abonnemang');picker.append(select);pricing?.insertBefore(picker,note);
  const uuid=v=>typeof v==='string'&&/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v);
- let chosen=null;
+ let chosen=null;let currentPlan=null;const planButtons=new Map();
  const ownGroups=()=>Array.isArray(window.FH?.groups)&&window.FH?.user?window.FH.groups.filter(g=>g.owner_id===window.FH.user.id&&uuid(g.id)):[];
  function refresh(){
   const groups=ownGroups();const previous=chosen;
@@ -15,7 +15,7 @@
   chosen=groups.some(g=>g.id===previous)?previous:(groups.length===1?groups[0].id:null);
   select.value=chosen||'';
   picker.hidden=!window.FH?.user||groups.length===1;
-  if(window.FH?.user&&!groups.length)note.textContent='Skapa en familjegrupp som du äger innan du väljer abonnemang.';
+  note.textContent=window.FH?.user&&!groups.length?'Skapa en familjegrupp som du äger innan du väljer abonnemang.':'';
  }
  select.addEventListener('change',()=>{chosen=ownGroups().some(g=>g.id===select.value)?select.value:null;renderStatus();});
  function selectedGroup(){
@@ -36,10 +36,12 @@
  }
  for(const btn of document.querySelectorAll('[data-plan-interest]')){
   const plan=btn.dataset.planInterest==='Plus'?'plus':'premium_family';
-  btn.textContent='Välj abonnemang';btn.removeAttribute('data-plan-interest');
+  planButtons.set(plan,btn);btn.textContent='Välj abonnemang';btn.removeAttribute('data-plan-interest');
   btn.addEventListener('click',async()=>{
    if(!window.FH?.user){note.textContent='Logga in och välj en familj för att fortsätta.';document.querySelector('[data-auth-mode="login"]')?.click();return;}
    let groupId;try{groupId=selectedGroup();}catch(e){note.textContent=e.message;select.focus();return;}
+   if(currentPlan===plan)return;
+   if(currentPlan&&currentPlan!=='free'){note.textContent='Hantera ditt befintliga abonnemang via Min profil.';return;}
    const yearly=document.getElementById('price-year')?.classList.contains('selected');
    btn.disabled=true;note.textContent='Öppnar Stripe i testläge…';
    try{await call('billing-checkout',{groupId,priceId:prices[plan][yearly?'year':'month']});}
@@ -64,8 +66,9 @@
  async function renderStatus(){
   const seq=++statusSequence;
   if(!state)return;
+  currentPlan=null;for(const btn of planButtons.values()){btn.textContent='Välj abonnemang';btn.disabled=true;}
   manage.hidden=true;details.textContent='';navPlan.textContent='';
-  if(!window.FH?.user){state.textContent='Logga in för att se familjens abonnemang.';return;}
+  if(!window.FH?.user){for(const btn of planButtons.values())btn.disabled=false;state.textContent='Logga in för att se familjens abonnemang.';return;}
   if(!chosen){state.textContent='Välj en familj i abonnemangssektionen för att se dess status.';return;}
   const groupId=chosen;state.textContent='Hämtar abonnemang…';
   const {data,error}=await window.FH.client.from('billing_subscriptions')
@@ -77,6 +80,9 @@
   const active=(data||[]).filter(s=>['active','trialing'].includes(s.status)&&['plus','premium_family'].includes(s.plan));
   if(active.length>1){state.textContent='Abonnemangsstatus behöver kontrolleras.';return;}
   const sub=active[0];
+  currentPlan=sub?.plan||'free';
+  for(const [plan,btn] of planButtons){btn.textContent=plan===currentPlan?'Nuvarande abonnemang':sub?'Hantera via Min profil':'Välj abonnemang';btn.disabled=plan===currentPlan;}
+  note.textContent='';
   const label=sub?(sub.plan==='premium_family'?'Premium Family':'Plus'):'Free';
   state.textContent='Famunova '+label;
   navPlan.textContent=family+' · '+label;
